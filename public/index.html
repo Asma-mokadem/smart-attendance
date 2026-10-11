@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Attendance</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f9; color: #222; }
+  header { background: #1f3a5f; color: white; padding: 16px 24px; }
+  main { padding: 24px; max-width: 1100px; margin: auto; }
+  .cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .card { background: white; border-radius: 8px; padding: 16px 20px; flex: 1; min-width: 160px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  .card h3 { margin: 0; font-size: 13px; color: #666; font-weight: normal; }
+  .card p { margin: 8px 0 0; font-size: 28px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+  th { background: #f0f2f5; }
+  .low { color: #c0392b; font-weight: bold; }
+</style>
+</head>
+<body>
+<header><h2 style="margin:0">Smart Attendance - Dashboard</h2></header>
+<main>
+  <div class="cards">
+    <div class="card"><h3>Etudiants</h3><p id="c-students">-</p></div>
+    <div class="card"><h3>Seances</h3><p id="c-sessions">-</p></div>
+    <div class="card"><h3>Taux global</h3><p id="c-rate">-</p></div>
+    <div class="card"><h3>Presents aujourd'hui</h3><p id="c-today">-</p></div>
+    <div class="card"><h3>Retards aujourd'hui</h3><p id="c-late">-</p></div>
+  </div>
+
+  <div class="box">
+    <h3>Presences par jour</h3>
+    <canvas id="chartDaily" height="90"></canvas>
+  </div>
+
+  <div class="box">
+    <h3>Taux de presence par etudiant</h3>
+    <canvas id="chartStudents" height="90"></canvas>
+  </div>
+
+  <div class="box">
+    <h3>Detail par etudiant</h3>
+    <table>
+      <thead><tr><th>ID</th><th>Nom</th><th>Presents</th><th>Absents</th><th>Retards</th><th>Taux presence</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+let chartDaily, chartStudents;
+
+async function load() {
+  const [summary, students, daily] = await Promise.all([
+    fetch("/api/stats/summary").then(r => r.json()),
+    fetch("/api/stats/students").then(r => r.json()),
+    fetch("/api/stats/daily").then(r => r.json())
+  ]);
+
+  document.getElementById("c-students").textContent = summary.totalStudents;
+  document.getElementById("c-sessions").textContent = summary.totalSessions;
+  document.getElementById("c-rate").textContent = summary.globalAttendanceRate + " %";
+  document.getElementById("c-today").textContent = summary.today.present;
+  document.getElementById("c-late").textContent = summary.today.late;
+
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = students.map(s => `
+    <tr>
+      <td>${s.studentId}</td>
+      <td>${s.firstName} ${s.lastName}</td>
+      <td>${s.present}</td>
+      <td>${s.absent}</td>
+      <td>${s.late}</td>
+      <td class="${s.attendanceRate < 75 ? "low" : ""}">${s.attendanceRate} %</td>
+    </tr>`).join("");
+
+  if (chartDaily) chartDaily.destroy();
+  chartDaily = new Chart(document.getElementById("chartDaily"), {
+    type: "bar",
+    data: {
+      labels: daily.map(d => d.date),
+      datasets: [
+        { label: "Presents", data: daily.map(d => d.present), backgroundColor: "#2e86de" },
+        { label: "Retards", data: daily.map(d => d.late), backgroundColor: "#e67e22" },
+        { label: "Absents", data: daily.map(d => d.absent), backgroundColor: "#c0392b" }
+      ]
+    }
+  });
+
+  if (chartStudents) chartStudents.destroy();
+  chartStudents = new Chart(document.getElementById("chartStudents"), {
+    type: "bar",
+    data: {
+      labels: students.map(s => s.firstName),
+      datasets: [{ label: "Taux de presence (%)", data: students.map(s => s.attendanceRate), backgroundColor: "#27ae60" }]
+    },
+    options: { scales: { y: { min: 0, max: 100 } } }
+  });
+}
+
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>

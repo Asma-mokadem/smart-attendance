@@ -42,12 +42,14 @@ function nowTunis() {
 
 
 
-app.get("/", (req, res) => {
+app.get("/api/health", (req, res) => {
     res.json({
         success: true,
         message: "Smart Attendance API is running"
     });
 });
+
+app.use(express.static(path.join(__dirname, "public")));
 
 // Liste des étudiants
 app.get("/api/students", (req, res) => {
