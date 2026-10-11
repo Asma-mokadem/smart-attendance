@@ -1,0 +1,62 @@
+[
+  {
+    "uid": "01:02:03:04",
+    "studentId": "2025001",
+    "firstName": "Ahmed",
+    "lastName": "Ben Ali"
+  },
+  {
+    "uid": "11:22:33:44",
+    "studentId": "2025002",
+    "firstName": "Mohamed",
+    "lastName": "Trabelsi"
+  },
+  {
+    "uid": "AA:BB:CC:DD",
+    "studentId": "2025003",
+    "firstName": "Youssef",
+    "lastName": "Mansouri"
+  },
+  {
+    "uid": "12:34:56:78",
+    "studentId": "2025004",
+    "firstName": "Mariem",
+    "lastName": "Jaziri"
+  },
+  {
+    "uid": "DE:AD:BE:EF",
+    "studentId": "2025005",
+    "firstName": "Amira",
+    "lastName": "Haddad"
+  },
+  {
+    "uid": "A1:B2:C3:D4",
+    "studentId": "2025006",
+    "firstName": "Sarra",
+    "lastName": "Khelifi"
+  },
+  {
+    "uid": "10:20:30:40",
+    "studentId": "2025007",
+    "firstName": "Omar",
+    "lastName": "Saidi"
+  },
+  {
+    "uid": "F1:E2:D3:C4",
+    "studentId": "2025008",
+    "firstName": "Nour",
+    "lastName": "Gharbi"
+  },
+  {
+    "uid": "21:43:65:87",
+    "studentId": "2025009",
+    "firstName": "Rania",
+    "lastName": "Ben Youssef"
+  },
+  {
+    "uid": "AB:CD:EF:12",
+    "studentId": "2025010",
+    "firstName": "Wassim",
+    "lastName": "Chaabane"
+  }
+]
