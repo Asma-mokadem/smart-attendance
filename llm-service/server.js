@@ -17,6 +17,28 @@ async function getJson(path) {
     return r.json();
 }
 
+function formatRanking(title, list, unit) {
+    if (!list.length) return title + " : aucun.";
+    const lines = list.map(r => `${r.rank}. ${r.name} : ${r.value}${unit}`);
+    return title + " :\n" + lines.join("\n");
+}
+
+// Retourne une reponse construite par le code, ou null si la question est libre
+function answerFromRankings(question, rankings) {
+    const q = question.toLowerCase();
+
+    if (q.includes("retard")) {
+        return formatRanking("Etudiants classes par nombre de retards", rankings.mostLate, " retard(s)");
+    }
+    if (q.includes("absen")) {
+        return formatRanking("Etudiants classes par nombre d'absences", rankings.mostAbsent, " absence(s)");
+    }
+    if (q.includes("taux") && (q.includes("bas") || q.includes("faible") || q.includes("pire"))) {
+        return formatRanking("Taux de presence, du plus bas au plus haut", rankings.lowestAttendance, " %");
+    }
+    return null;
+}
+
 app.post("/api/chat", async (req, res) => {
     const question = (req.body.question || "").trim();
     if (!question) {
@@ -32,7 +54,10 @@ app.post("/api/chat", async (req, res) => {
         ]);
 
         const data = JSON.stringify({ summary, rankings, students }, null, 1);
-
+        const direct = answerFromRankings(question, rankings);
+        if (direct) {
+            return res.json({ success: true, answer: direct, source: "code" });
+        }
         // 2. Consignes strictes pour le LLM
         const prompt =
 `Tu es l'assistant d'un systeme de gestion de presence d'etudiants.
@@ -46,6 +71,8 @@ Regles :
 - Si la reponse n'est pas dans les donnees, dis-le.
 - Un retard = arrivee apres 08:40. Les taux portent sur les seances passees.
 - Pour les classements (plus de retards, plus d'absences, taux le plus bas), utilise UNIQUEMENT la section "rankings" : elle est deja triee, recopie-la dans l'ordre.
+- Les valeurs "attendanceRate" et "lowestAttendance" sont des taux de PRESENCE (jamais d'absence).
+- Pour un resume, cite uniquement les chiffres de "summary" et au plus 3 etudiants, et precise "parmi d'autres" s'il y a des egalites.
 
 DONNEES :
 ${data}
