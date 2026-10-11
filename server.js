@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const { computeStats } = require("./stats");
+const DEMO_FILE = path.join(__dirname, "demo-attendance.json");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,7 +27,10 @@ function readJson(file) {
 function writeJson(file, data) {
     fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
-
+if (!fs.existsSync(ATTENDANCE_FILE) && fs.existsSync(DEMO_FILE)) {
+    fs.copyFileSync(DEMO_FILE, ATTENDANCE_FILE);
+    console.log("Donnees de demo chargees");
+}
 
 function nowTunis() {
     const now = new Date();
@@ -130,7 +135,20 @@ app.post("/api/attendance", (req, res) => {
         record: record
     });
 });
+app.get("/api/stats/summary", (req, res) => {
+    const s = computeStats(readJson(STUDENTS_FILE), readJson(ATTENDANCE_FILE), nowTunis().date);
+    res.json(s.summary);
+});
 
+app.get("/api/stats/students", (req, res) => {
+    const s = computeStats(readJson(STUDENTS_FILE), readJson(ATTENDANCE_FILE), nowTunis().date);
+    res.json(s.perStudent);
+});
+
+app.get("/api/stats/daily", (req, res) => {
+    const s = computeStats(readJson(STUDENTS_FILE), readJson(ATTENDANCE_FILE), nowTunis().date);
+    res.json(s.perDay);
+});
 app.listen(PORT, () => {
     console.log(`Serveur demarre sur le port ${PORT}`);
 });
