@@ -151,6 +151,10 @@ app.get("/api/stats/daily", (req, res) => {
     const s = computeStats(readJson(STUDENTS_FILE), readJson(ATTENDANCE_FILE), nowTunis().date);
     res.json(s.perDay);
 });
+app.get("/api/stats/rankings", (req, res) => {
+    const s = computeStats(readJson(STUDENTS_FILE), readJson(ATTENDANCE_FILE), nowTunis().date);
+    res.json(s.rankings);
+});
 app.listen(PORT, () => {
     console.log(`Serveur demarre sur le port ${PORT}`);
 });

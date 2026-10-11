@@ -1,4 +1,4 @@
-const CLASS_START = 8 * 60 + 30;   // 08:30
+const CLASS_START = 8 * 60 + 30;     // 08:30
 const LATE_AFTER = CLASS_START + 10; // retard apres 08:40
 
 function toMinutes(t) {
@@ -14,14 +14,44 @@ function round1(x) {
     return Math.round(x * 10) / 10;
 }
 
+// Classement avec egalites : meme valeur = meme rang
+// field : champ a trier, direction : "desc" ou "asc"
+function rankBy(list, field, direction, keepZero) {
+    const sorted = list
+        .filter(s => keepZero || s[field] > 0)
+        .sort((a, b) => {
+            const diff = direction === "desc" ? b[field] - a[field] : a[field] - b[field];
+            if (diff !== 0) return diff;
+            return (a.firstName + a.lastName).localeCompare(b.firstName + b.lastName);
+        });
+
+    let rank = 0;
+    let previous = null;
+
+    return sorted.map((s, i) => {
+        if (s[field] !== previous) {
+            rank = i + 1;
+            previous = s[field];
+        }
+        return {
+            rank,
+            studentId: s.studentId,
+            name: s.firstName + " " + s.lastName,
+            value: s[field]
+        };
+    });
+}
+
 function computeStats(students, attendance, today) {
 
-    const dates = [...new Set(attendance.map(a => a.date))].sort();
+    // Seances passees seulement : la journee en cours n'est pas terminee
+    const pastAttendance = attendance.filter(a => a.date < today);
+    const dates = [...new Set(pastAttendance.map(a => a.date))].sort();
     const totalSessions = dates.length;
 
     // ----- par étudiant -----
     const perStudent = students.map(s => {
-        const mine = attendance.filter(a => a.studentId === s.studentId);
+        const mine = pastAttendance.filter(a => a.studentId === s.studentId);
         const presentDays = mine.length;
         const lateDays = mine.filter(isLate).length;
         const absentDays = totalSessions - presentDays;
@@ -41,7 +71,7 @@ function computeStats(students, attendance, today) {
 
     // ----- par jour -----
     const perDay = dates.map(d => {
-        const recs = attendance.filter(a => a.date === d);
+        const recs = pastAttendance.filter(a => a.date === d);
         return {
             date: d,
             present: recs.length,
@@ -50,10 +80,18 @@ function computeStats(students, attendance, today) {
         };
     });
 
+    // ----- classements (calcules par le code, pas par le LLM) -----
+    const rankings = {
+        mostLate: rankBy(perStudent, "late", "desc", false),
+        mostAbsent: rankBy(perStudent, "absent", "desc", false),
+        lowestAttendance: rankBy(perStudent, "attendanceRate", "asc", true)
+    };
+
     // ----- résumé global -----
-    const totalPresences = attendance.length;
+    const totalPresences = pastAttendance.length;
     const possible = totalSessions * students.length;
 
+    // Aujourd'hui : on lit toutes les presences (journee en cours)
     const todayRecs = attendance.filter(a => a.date === today);
 
     const summary = {
@@ -70,7 +108,7 @@ function computeStats(students, attendance, today) {
         lateAfter: "08:40"
     };
 
-    return { summary, perStudent, perDay };
+    return { summary, perStudent, perDay, rankings };
 }
 
 module.exports = { computeStats };
