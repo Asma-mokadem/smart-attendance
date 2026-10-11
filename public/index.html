@@ -4,104 +4,380 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Smart Attendance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f9; color: #222; }
-  header { background: #1f3a5f; color: white; padding: 16px 24px; }
-  main { padding: 24px; max-width: 1100px; margin: auto; }
-  .cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-  .card { background: white; border-radius: 8px; padding: 16px 20px; flex: 1; min-width: 160px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
-  .card h3 { margin: 0; font-size: 13px; color: #666; font-weight: normal; }
-  .card p { margin: 8px 0 0; font-size: 28px; font-weight: bold; }
-  .box { background: white; border-radius: 8px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-  th { background: #f0f2f5; }
-  .low { color: #c0392b; font-weight: bold; }
-    #chat-log { height: 260px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; padding: 10px; margin-bottom: 10px; background: #fafbfc; display: flex; flex-direction: column; }
-  .msg { margin: 6px 0; padding: 8px 12px; border-radius: 8px; max-width: 80%; white-space: pre-wrap; font-size: 14px; }
-  .user { background: #2e86de; color: white; align-self: flex-end; }
-  .bot { background: #e8ecf1; align-self: flex-start; }
-  #chat-form { display: flex; gap: 8px; }
-  #chat-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
-  #chat-btn { padding: 10px 18px; background: #1f3a5f; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  :root {
+    --ink: #0f1f2e;
+    --ink-2: #172c40;
+    --ink-line: rgba(255,255,255,.12);
+    --paper: #f3f5f4;
+    --panel: #ffffff;
+    --line: #e3e8e6;
+    --text: #14212b;
+    --muted: #6b7a85;
+    --teal: #0e8a82;
+    --teal-soft: #e2f3f1;
+    --amber: #d9822b;
+    --amber-soft: #fbeedd;
+    --brick: #b4453a;
+    --brick-soft: #f8e4e1;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: "Manrope", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    background: var(--paper);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    background:
+      radial-gradient(900px 400px at 85% -10%, rgba(14,138,130,.35), transparent 60%),
+      var(--ink);
+    color: #fff;
+    padding: 28px 24px 0;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 17px; letter-spacing: .2px; }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, #12a79d, #0b6f69);
+    display: grid; place-items: center;
+  }
+  .live {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: rgba(255,255,255,.75);
+    border: 1px solid var(--ink-line); padding: 6px 12px; border-radius: 999px;
+  }
+  .live i { width: 8px; height: 8px; border-radius: 50%; background: #3ddc97; box-shadow: 0 0 0 0 rgba(61,220,151,.6); animation: pulse 2s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(61,220,151,0); } 100% { box-shadow: 0 0 0 0 rgba(61,220,151,0); } }
+
+  .hero-main { display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: center; padding: 44px 0 40px; }
+  .ring { position: relative; width: 200px; height: 200px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring-track { stroke: rgba(255,255,255,.1); }
+  .ring-bar { stroke: #3ddc97; stroke-linecap: round; transition: stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1); }
+  .ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ring-center strong { font-size: 52px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+  .ring-center span { font-size: 13px; color: rgba(255,255,255,.65); margin-top: 6px; }
+
+  .hero-text h1 { margin: 0 0 6px; font-size: 32px; font-weight: 800; letter-spacing: -.5px; line-height: 1.15; }
+  .hero-text p { margin: 0; color: rgba(255,255,255,.7); max-width: 46ch; }
+
+  .strip { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--ink-line); }
+  .kpi { padding: 22px 0 24px 24px; border-left: 1px solid var(--ink-line); }
+  .kpi:first-child { padding-left: 0; border-left: 0; }
+  .kpi p { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.5px; line-height: 1.1; }
+  .kpi h3 { margin: 6px 0 0; font-size: 13px; font-weight: 500; color: rgba(255,255,255,.6); }
+
+  /* ---------- Content ---------- */
+  main { padding: 32px 24px 56px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .panel h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.2px; }
+  .panel-sub { font-size: 13px; color: var(--muted); }
+
+  .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; }
+  .grid-2 .panel { margin-bottom: 24px; }
+  .chart-box { position: relative; height: 300px; }
+
+  /* ---------- Table ---------- */
+  .table-wrap { overflow-x: auto; margin: 0 -8px; padding: 0 8px; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th {
+    text-align: left; font-size: 13px; font-weight: 600; color: var(--muted);
+    padding: 0 10px 12px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 14px 10px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: #f8faf9; }
+  .who { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex: none;
+    display: grid; place-items: center; font-size: 12px; font-weight: 700;
+    background: var(--teal-soft); color: var(--teal);
+  }
+  .sid { color: var(--muted); font-weight: 500; font-size: 13px; }
+  .pill { display: inline-block; min-width: 28px; text-align: center; padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: 13px; }
+  .pill.zero { color: var(--muted); background: #eef1f0; }
+  .pill.late { color: #9a5a14; background: var(--amber-soft); }
+  .pill.abs { color: var(--brick); background: var(--brick-soft); }
+  .rate { display: flex; align-items: center; gap: 12px; min-width: 150px; }
+  .bar { flex: 1; height: 6px; border-radius: 99px; background: #eaeeed; overflow: hidden; }
+  .bar span { display: block; height: 100%; border-radius: 99px; background: var(--teal); }
+  .rate b { width: 52px; text-align: right; font-weight: 700; }
+  .rate.mid .bar span { background: var(--amber); }
+  .rate.low .bar span { background: var(--brick); }
+  .rate.low b { color: var(--brick); }
+
+  /* ---------- Chat ---------- */
+  .chat { display: grid; grid-template-columns: 240px 1fr; gap: 24px; }
+  .chat-intro p { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+  .chips { display: flex; flex-direction: column; gap: 8px; }
+  .chip {
+    text-align: left; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+    padding: 9px 12px; cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .chip:hover { background: var(--teal-soft); border-color: #b9e0dc; }
+  #chat-log {
+    height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+    padding: 16px; background: var(--paper); border-radius: 12px; margin-bottom: 12px;
+  }
+  .msg { padding: 10px 14px; border-radius: 14px; max-width: 82%; white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
+  .user { background: var(--ink); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .bot { background: #fff; border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 4px; }
+  #chat-form { display: flex; gap: 10px; }
+  #chat-input {
+    flex: 1; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
+    font: inherit; font-size: 14px; background: #fff; color: var(--text);
+  }
+  #chat-input:focus { outline: 2px solid var(--teal); outline-offset: 1px; border-color: transparent; }
+  #chat-btn {
+    padding: 12px 22px; border: 0; border-radius: 12px; cursor: pointer;
+    font: inherit; font-weight: 700; font-size: 14px; color: #fff; background: var(--teal);
+    transition: background .15s;
+  }
+  #chat-btn:hover { background: #0b756e; }
+  .chip:focus-visible, #chat-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .chat { grid-template-columns: 1fr; }
+    .chips { flex-direction: row; flex-wrap: wrap; }
+  }
+  @media (max-width: 640px) {
+    .hero-main { grid-template-columns: 1fr; justify-items: start; gap: 24px; padding: 32px 0; }
+    .strip { grid-template-columns: repeat(2, 1fr); }
+    .kpi { padding-left: 16px; }
+    .kpi:nth-child(odd) { padding-left: 0; border-left: 0; }
+    .kpi:nth-child(n+3) { border-top: 1px solid var(--ink-line); }
+    .hero-text h1 { font-size: 26px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .live i { animation: none; }
+    .ring-bar { transition: none; }
+  }
 </style>
 </head>
 <body>
-<header><h2 style="margin:0">Smart Attendance - Dashboard</h2></header>
-<main>
-  <div class="cards">
-    <div class="card"><h3>Etudiants</h3><p id="c-students">-</p></div>
-    <div class="card"><h3>Seances</h3><p id="c-sessions">-</p></div>
-    <div class="card"><h3>Taux global</h3><p id="c-rate">-</p></div>
-    <div class="card"><h3>Presents aujourd'hui</h3><p id="c-today">-</p></div>
-    <div class="card"><h3>Retards aujourd'hui</h3><p id="c-late">-</p></div>
-  </div>
 
-  <div class="box">
-    <h3>Presences par jour</h3>
-    <canvas id="chartDaily" height="90"></canvas>
-  </div>
-
-  <div class="box">
-    <h3>Taux de presence par etudiant</h3>
-    <canvas id="chartStudents" height="90"></canvas>
-  </div>
-
-  <div class="box">
-    <h3>Detail par etudiant</h3>
-    <table>
-      <thead><tr><th>ID</th><th>Nom</th><th>Presents</th><th>Absents</th><th>Retards</th><th>Taux presence</th></tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-    <div class="box">
-    <h3>Assistant presence</h3>
-    <div id="chat-log"></div>
-    <div id="chat-form">
-      <input id="chat-input" placeholder="Ex : Qui a le plus d'absences ?">
-      <button id="chat-btn">Envoyer</button>
+<header class="hero">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </div>
+        Smart Attendance
+      </div>
+      <div class="live"><i></i><span id="live-text">En direct</span></div>
     </div>
+
+    <div class="hero-main">
+      <div class="ring">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <circle class="ring-track" cx="100" cy="100" r="86" fill="none" stroke-width="14"/>
+          <circle id="ring-bar" class="ring-bar" cx="100" cy="100" r="86" fill="none" stroke-width="14"
+                  stroke-dasharray="540.35" stroke-dashoffset="540.35"/>
+        </svg>
+        <div class="ring-center">
+          <strong id="ring-num">-</strong>
+          <span id="ring-label">présents aujourd'hui</span>
+        </div>
+      </div>
+      <div class="hero-text">
+        <h1>Qui est en classe aujourd'hui ?</h1>
+        <p id="hero-date">Chargement des données...</p>
+      </div>
+    </div>
+
+    <div class="strip">
+      <div class="kpi"><p id="c-students">-</p><h3>Etudiants</h3></div>
+      <div class="kpi"><p id="c-sessions">-</p><h3>Séances terminées</h3></div>
+      <div class="kpi"><p id="c-rate">-</p><h3>Taux de présence global</h3></div>
+      <div class="kpi"><p id="c-late">-</p><h3>Retards aujourd'hui</h3></div>
+    </div>
+  </div>
+  <span id="c-today" hidden></span>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="grid-2">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Présences par jour</h2>
+          <span class="panel-sub">Séances terminées</span>
+        </div>
+        <div class="chart-box"><canvas id="chartDaily"></canvas></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Taux par étudiant</h2>
+          <span class="panel-sub">En %</span>
+        </div>
+        <div class="chart-box"><canvas id="chartStudents"></canvas></div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Détail par étudiant</h2>
+        <span class="panel-sub">Retard = arrivée après 08:40</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Etudiant</th><th>Présents</th><th>Absents</th><th>Retards</th><th>Taux de présence</th></tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Assistant présence</h2>
+        <span class="panel-sub">Les chiffres sont calculés par le code</span>
+      </div>
+      <div class="chat">
+        <div class="chat-intro">
+          <p>Posez une question en langage naturel, ou essayez :</p>
+          <div class="chips">
+            <button class="chip" data-q="Qui sont les étudiants les plus souvent en retard ?">Qui est le plus en retard ?</button>
+            <button class="chip" data-q="Qui a le plus d'absences ?">Qui a le plus d'absences ?</button>
+            <button class="chip" data-q="Comment justifier une absence ?">Comment justifier une absence ?</button>
+            <button class="chip" data-q="Que risque Amira ?">Que risque Amira ?</button>
+          </div>
+        </div>
+        <div>
+          <div id="chat-log"></div>
+          <div id="chat-form">
+            <input id="chat-input" placeholder="Ex : Qui a le plus d'absences ?" autocomplete="off">
+            <button id="chat-btn">Envoyer</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 </main>
 
 <script>
 let chartDaily, chartStudents;
+let firstLoad = true;
+
+const C = { teal: "#0e8a82", amber: "#d9822b", brick: "#b4453a", grid: "#e9eeec", text: "#6b7a85" };
+const RING_LEN = 540.35;
+
+Chart.defaults.font.family = '"Manrope", "Segoe UI", system-ui, Arial, sans-serif';
+Chart.defaults.color = C.text;
+
+function initials(s) {
+  return ((s.firstName || "")[0] || "") + ((s.lastName || "")[0] || "");
+}
+
+function rateClass(r) {
+  if (r < 50) return "low";
+  if (r < 75) return "mid";
+  return "";
+}
+
+function pill(n, cls) {
+  return `<span class="pill ${n === 0 ? "zero" : cls}">${n}</span>`;
+}
 
 async function load() {
-  const [summary, students, daily] = await Promise.all([
-    fetch("/api/stats/summary").then(r => r.json()),
-    fetch("/api/stats/students").then(r => r.json()),
-    fetch("/api/stats/daily").then(r => r.json())
-  ]);
+  let summary, students, daily;
+  try {
+    [summary, students, daily] = await Promise.all([
+      fetch("/api/stats/summary").then(r => r.json()),
+      fetch("/api/stats/students").then(r => r.json()),
+      fetch("/api/stats/daily").then(r => r.json())
+    ]);
+    document.getElementById("live-text").textContent = "En direct";
+  } catch (e) {
+    document.getElementById("live-text").textContent = "Connexion perdue";
+    return;
+  }
 
+  // KPIs
   document.getElementById("c-students").textContent = summary.totalStudents;
   document.getElementById("c-sessions").textContent = summary.totalSessions;
   document.getElementById("c-rate").textContent = summary.globalAttendanceRate + " %";
   document.getElementById("c-today").textContent = summary.today.present;
   document.getElementById("c-late").textContent = summary.today.late;
 
-  const tbody = document.getElementById("tbody");
-  tbody.innerHTML = students.map(s => `
+  // Anneau : presents aujourd'hui
+  const total = summary.totalStudents || 1;
+  const ratio = Math.min(summary.today.present / total, 1);
+  document.getElementById("ring-num").textContent = summary.today.present + " / " + summary.totalStudents;
+  document.getElementById("ring-num").style.fontSize = "40px";
+  document.getElementById("ring-bar").style.strokeDashoffset = RING_LEN * (1 - ratio);
+
+  const d = new Date(summary.today.date + "T12:00:00");
+  const dateTxt = isNaN(d) ? summary.today.date
+    : d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  document.getElementById("hero-date").textContent =
+    dateTxt + " · cours à " + summary.classStart + ", retard après " + summary.lateAfter;
+
+  // Tableau
+  document.getElementById("tbody").innerHTML = students.map(s => `
     <tr>
-      <td>${s.studentId}</td>
-      <td>${s.firstName} ${s.lastName}</td>
+      <td>
+        <div class="who">
+          <div class="avatar">${initials(s)}</div>
+          <div>${s.firstName} ${s.lastName}<div class="sid">${s.studentId}</div></div>
+        </div>
+      </td>
       <td>${s.present}</td>
-      <td>${s.absent}</td>
-      <td>${s.late}</td>
-      <td class="${s.attendanceRate < 75 ? "low" : ""}">${s.attendanceRate} %</td>
+      <td>${pill(s.absent, "abs")}</td>
+      <td>${pill(s.late, "late")}</td>
+      <td>
+        <div class="rate ${rateClass(s.attendanceRate)}">
+          <div class="bar"><span style="width:${s.attendanceRate}%"></span></div>
+          <b>${s.attendanceRate} %</b>
+        </div>
+      </td>
     </tr>`).join("");
+
+  // Graphiques (animation seulement au premier chargement)
+  const anim = firstLoad ? { duration: 700 } : false;
 
   if (chartDaily) chartDaily.destroy();
   chartDaily = new Chart(document.getElementById("chartDaily"), {
     type: "bar",
     data: {
-      labels: daily.map(d => d.date),
+      labels: daily.map(x => x.date.slice(5)),
       datasets: [
-        { label: "Presents", data: daily.map(d => d.present), backgroundColor: "#2e86de" },
-        { label: "Retards", data: daily.map(d => d.late), backgroundColor: "#e67e22" },
-        { label: "Absents", data: daily.map(d => d.absent), backgroundColor: "#c0392b" }
+        { label: "Présents", data: daily.map(x => x.present), backgroundColor: C.teal, borderRadius: 5, borderSkipped: false },
+        { label: "Retards", data: daily.map(x => x.late), backgroundColor: C.amber, borderRadius: 5, borderSkipped: false },
+        { label: "Absents", data: daily.map(x => x.absent), backgroundColor: C.brick, borderRadius: 5, borderSkipped: false }
       ]
+    },
+    options: {
+      animation: anim,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom", labels: { usePointStyle: true, pointStyle: "rectRounded", boxWidth: 8, padding: 16 } } },
+      scales: {
+        x: { grid: { display: false }, border: { display: false } },
+        y: { grid: { color: C.grid }, border: { display: false }, ticks: { precision: 0 } }
+      }
     }
   });
 
@@ -110,11 +386,29 @@ async function load() {
     type: "bar",
     data: {
       labels: students.map(s => s.firstName),
-      datasets: [{ label: "Taux de presence (%)", data: students.map(s => s.attendanceRate), backgroundColor: "#27ae60" }]
+      datasets: [{
+        label: "Taux de présence (%)",
+        data: students.map(s => s.attendanceRate),
+        backgroundColor: students.map(s => s.attendanceRate < 50 ? C.brick : s.attendanceRate < 75 ? C.amber : C.teal),
+        borderRadius: 5, borderSkipped: false
+      }]
     },
-    options: { scales: { y: { min: 0, max: 100 } } }
+    options: {
+      indexAxis: "y",
+      animation: anim,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { min: 0, max: 100, grid: { color: C.grid }, border: { display: false } },
+        y: { grid: { display: false }, border: { display: false } }
+      }
+    }
   });
+
+  firstLoad = false;
 }
+
+/* ---------- Chat ---------- */
 const LLM_URL = "http://localhost:4000/api/chat";
 
 function addMsg(text, cls) {
@@ -127,11 +421,7 @@ function addMsg(text, cls) {
   return d;
 }
 
-async function sendQuestion() {
-  const input = document.getElementById("chat-input");
-  const q = input.value.trim();
-  if (!q) return;
-  input.value = "";
+async function ask(q) {
   addMsg(q, "user");
   const wait = addMsg("...", "bot");
   try {
@@ -143,14 +433,29 @@ async function sendQuestion() {
     const data = await r.json();
     wait.textContent = data.success ? data.answer : "Erreur : " + data.message;
   } catch (e) {
-    wait.textContent = "Service IA indisponible (Ollama et llm-service lances ?)";
+    wait.textContent = "Service IA indisponible (Ollama et llm-service lancés ?)";
   }
+  document.getElementById("chat-log").scrollTop = document.getElementById("chat-log").scrollHeight;
+}
+
+function sendQuestion() {
+  const input = document.getElementById("chat-input");
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = "";
+  ask(q);
 }
 
 document.getElementById("chat-btn").addEventListener("click", sendQuestion);
 document.getElementById("chat-input").addEventListener("keydown", e => {
   if (e.key === "Enter") sendQuestion();
 });
+document.querySelectorAll(".chip").forEach(b =>
+  b.addEventListener("click", () => ask(b.dataset.q))
+);
+
+addMsg("Bonjour. Je réponds aux questions sur la présence des étudiants et sur le règlement.", "bot");
+
 load();
 setInterval(load, 10000);
 </script>
